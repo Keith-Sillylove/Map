@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Hello, World</title>
+		<style type="text/css">
+			html {
+				height: 100%
+			}
+			
+			body {
+				height: 100%;
+				margin: 0px;
+				padding: 0px;
+				
+			}
+			
+			.ipt {
+				border: 1px solid #ddd;
+				box-shadow: 0 0 3px rgba(0, 0, 0, 0.17) inset;
+				transition: border 0.2s linear 0s, box-shadow 0.2s linear 0s;
+				border-radius: 0 !important;
+				-moz-border-radius: 0 !important;
+				-webkit-border-radius: 0 !important;
+				height: 34px;
+				padding: 0px 5px;
+				line-height: 30px\9;
+			}
+			
+			* {
+				box-sizing: border-box;
+			}
+			
+			#container {
+				height: 100%
+			}
+			
+			.form-inline {
+				position: absolute;
+				z-index: 9999;
+				margin-left: 100px;
+			}
+			
+			.form-inline .form-group {
+				display: inline-block;
+			}
+		</style>
+
+	</head>
+
+	<body>
+		<div class="form-inline">
+			<select id="province" name="province" class="ipt areaLists" style="width:150px;" value="省份">-- 请选择 --</select>
+			<select id="city" name="city" class="ipt areaLists" style="width:150px;" value="地级市">-- 请选择 --</select>
+			<select id="county" name="county" class="ipt areaLists" style="width:150px;" value="市、县级市">-- 请选择 --</select>
+			<input class="ipt" id="address" placeholder="例如：北京方向B座" style="width: 460px;">
+		</div>
+		<div id="container"></div>
+		<script src="js/jquery-1.8.3.min.js"></script>
+		<script src="js/area.js"></script>
+		<script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=neXaxvyL4YLEreGd08Yx34nGx7G7Dcpw">
+			//v3.0版本的引用方式：src="http://api.map.baidu.com/api?v=3.0&ak=您的密钥"
+		</script>
+		<script type="text/javascript" src="js/GeoUtil.js"></script>
+		<script type="text/javascript">
+			var point2s = [
+				[116.401125422368, 39.88820985009381, '公司1'],
+				[116.391125422368, 39.88620985009381, '公司2'],
+				[116.481125422368, 39.88720985009381, '公司3'],
+				[116.471125422368, 39.88520985009381, '公司4'],
+				[116.461125422368, 39.87820985009381, '公司5'],
+				[116.451125422368, 39.89820985009381, '公司6'],
+				[116.441125422368, 39.86820985009381, '公司7'],
+				[116.431125422368, 39.85820985009381, '公司8'],
+				[116.481125422368, 39.88420985009381, '公司9'],
+				[116.421125422368, 39.88320985009381, '公司0'],
+				[116.411125422368, 39.88220985009381, '公司10'],
+				[116.401125422368, 39.88770985009381, '公司11'],
+				[116.421125422368, 39.88120985009381, '公司12'],
+				[116.431125422368, 39.88020985009381, '公司13'],
+				[116.441125422368, 39.88010985009381, '公司14'],
+				[116.451125422368, 39.88030985009381, '公司15'],
+				[116.461125422368, 39.88040985009381, '公司16'],
+				[116.471125422368, 39.88050985009381, '公司17'],
+			];
+			var opts = {
+				//width : 150,     // 信息窗口宽度
+				enableMessage:true//设置允许信息窗发送短息
+			};
+
+			var map = new BMap.Map("container"); // 创建地图实例  
+			var point = new BMap.Point(116.404, 39.915); // 创建点坐标  
+			map.centerAndZoom(point, 12); // 初始化地图，设置中心点坐标和地图级别
+			//map.centerAndZoom(new BMap.Point(116.404, 39.915), 15);
+			map.enableScrollWheelZoom(true); //开启鼠标滚轮缩放
+
+			//控件
+			map.addControl(new BMap.NavigationControl()); //平移缩放
+			map.addControl(new BMap.ScaleControl()); //默认位于地图左下方，显示地图的比例关系 
+			map.addControl(new BMap.OverviewMapControl()); //默认位于地图右下方，是一个可折叠的缩略地图   
+			//map.addControl(new BMap.MapTypeControl()); //默认位于地图右上方
+			map.setCurrentCity("北京"); // 仅当设置城市信息时，MapTypeControl的切换功能才能可用   
+
+			var circle;
+
+			//标注			    
+			var marker = new BMap.Marker(point); // 创建标注    
+			map.addOverlay(marker); // 将标注添加到地图中
+			function addMarker(point, index) { // 创建图标对象   
+				var myIcon = new BMap.Icon("img/markers.png", new BMap.Size(23, 25), {
+					// 指定定位位置。   
+					// 当标注显示在地图上时，其所指向的地理位置距离图标左上    
+					// 角各偏移10像素和25像素。您可以看到在本例中该位置即是   
+					// 图标中央下端的尖角位置。    
+					anchor: new BMap.Size(10, 25),
+					// 设置图片偏移。   
+					// 当您需要从一幅较大的图片中截取某部分作为标注图标时，您   
+					// 需要指定大图的偏移位置，此做法与css sprites技术类似。    
+					imageOffset: new BMap.Size(0, 0 - index * 25) // 设置图片偏移    
+				});
+				// 创建标注对象并添加到地图   
+				var marker = new BMap.Marker(point, {
+					icon: myIcon
+				});
+				map.addOverlay(marker);
+
+				//圆形范围标注
+				circle = new BMap.Circle(point, 5000,{
+					strokeColor: "blue",
+		            strokeWeight: 1,
+		            fillColor: "#E2E8F1",
+		            fillOpacity: 0.6
+				}); // 创建标注
+				map.addOverlay(circle); // 将标注添加到地图中
+			}
+
+			var geoc = new BMap.Geocoder();
+			map.addEventListener("click", function(e) {
+				console.log(e.point);
+				//详细位置
+				geoc.getLocation(e.point, function(rs) {
+					addComp = rs.addressComponents;
+					console.log(addComp);
+					console.log(addComp.province + ", " + addComp.city + ", " + addComp.district + ", " + addComp.street + ", " + addComp.streetNumber);
+
+					$("#province").val(addComp.province);
+					$("#city").val(addComp.city);
+					$("#county").val(addComp.district);
+					$("#address").val(addComp.street + addComp.streetNumber)
+				});
+				map.clearOverlays(); //清除图层覆盖物
+				addMarker(e.point, 10);
+				
+				$.ajax({
+					type:"get",
+					url:"http://192.168.1.106/getAround?lat="+e.point.lat+"&lon="+e.point.lng+"&raidus=5000",
+					data:{},
+					success: function(data){
+						console.log(1111111111111111111)
+						alert(data)
+					}
+				});
+				showMarker(point2s);
+			});
+			//根据选择框或输入框获取地址
+			var _area = {
+				//keyword:'',
+				_areaLists: $(".areaLists"),
+				_address: $("#address"),
+				unChecked: function(val) {
+					return(val == '' || typeof(val) == 'undefined' || val == null ||
+						val == '省份' || val == '地级市' || val == '市、县级市') ? false : true;
+				},
+				list: function() {
+					//console.log(_areaLists.length);
+					var _joinArea = '';
+					for(var i = 0; i < this._areaLists.length; i++) {
+						if(_area.unChecked(this._areaLists[i].value)) {
+							_joinArea += this._areaLists[i].value;
+						}
+					}
+					if(_area.unChecked(this._address.val())) {
+						_joinArea += ' ' + this._address.val();
+						//_joinArea=this._address.val();
+						console.log('here');
+					}
+					//console.log(_joinArea);
+					return _joinArea;
+				},
+				init: function() {
+					//绑定百度地图
+					var _this = _area.list();
+					console.log('_this=' + _this);
+					//map.setViewport(_this); //调整视野
+					//定义local
+					var local = new BMap.LocalSearch(map, {
+						renderOptions: {
+							map: map,
+							autoViewport: true
+						}
+					});
+					local.search(_this);
+				}
+			}
+			//搜索地址并赋值给form
+			$("#province,#city,#county").change(function() {
+				map.clearOverlays();
+				_area.init();
+			});
+			//全局变量：存储address字符串长度做判断
+			var _thisLength = '';
+			$("#address").keydown(function() {
+				_thisLength = $(this).val().length;
+				console.log('鼠标按下之前：' + _thisLength);
+			})
+			$("#address").keyup(function() {
+				var _newLength = $(this).val().length;
+				console.log('鼠标按下之后：' + _thisLength);
+				var timer = setTimeout(function() {
+					if(_thisLength <= _newLength) {
+						map.clearOverlays();
+						_area.init();
+					} else {
+						clearTimeout(timer);
+					}
+				}, 3000);
+			})
+			$("#address").blur(function() {
+				map.clearOverlays();
+				_area.init();
+			})
+
+			//创建标注点并添加到地图中
+			function showMarker(points) {
+				//循环建立标注点
+				for(var i = 0, pointsLen = points.length; i < pointsLen; i++) {
+					if(BMapLib.GeoUtils.isPointInCircle(new BMap.Point(points[i][0], points[i][1]), circle)) {
+						var marker = new BMap.Marker(new BMap.Point(points[i][0], points[i][1])); //将点转化成标注点
+						var content = points[i][2]+'<br/><br/>125555555555555555555555555555555555513654616516';
+						map.addOverlay(marker); //将标注点添加到地图上
+
+						addMouseoverHandler(content,marker);
+					}
+				}
+			}
+			//添加监听事件
+			function addMouseoverHandler(content,marker) {
+				marker.addEventListener("mouseover",function(e) {
+					showInfo(content,e);
+				});
+			};
+			//显示企业名称
+			function showInfo(content,e) {
+				var p = e.target;
+				var point = new BMap.Point(p.getPosition().lng, p.getPosition().lat)
+				var infoWindow = new BMap.InfoWindow(content,opts);
+				map.openInfoWindow(infoWindow,point);
+			}
+		</script>
+	</body>
+
+</html>
